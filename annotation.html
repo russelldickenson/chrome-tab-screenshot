@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="annotation.css">
+    <title>Annotate Screenshot</title>
+  </head>
+  <body>
+    <div id="toolbar-container">
+      <div id="toolbar">
+        <div class="tool-group">
+          <button class="tool-btn active" data-tool="arrow" title="Arrow Tool" aria-label="Arrow tool">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="12 5 19 5 19 12"/></svg>
+          </button>
+          <button class="tool-btn" data-tool="box" title="Box Tool" aria-label="Box tool">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+          </button>
+        </div>
+        <div id="color-palette"></div>
+        <div id="line-width-group">
+          <button class="lw-btn active" data-width="2" title="2 px line width" aria-label="2 pixel line width">
+            <svg viewBox="0 0 18 10" width="14" height="10"><line x1="0" y1="5" x2="18" y2="5" stroke-width="2"/></svg>
+          </button>
+          <button class="lw-btn" data-width="4" title="4 px line width" aria-label="4 pixel line width">
+            <svg viewBox="0 0 18 10" width="14" height="10"><line x1="0" y1="5" x2="18" y2="5" stroke-width="4"/></svg>
+          </button>
+          <button class="lw-btn" data-width="6" title="6 px line width" aria-label="6 pixel line width">
+            <svg viewBox="0 0 18 10" width="14" height="10"><line x1="0" y1="5" x2="18" y2="5" stroke-width="6"/></svg>
+          </button>
+          <button class="lw-btn" data-width="8" title="8 px line width" aria-label="8 pixel line width">
+            <svg viewBox="0 0 18 10" width="14" height="10"><line x1="0" y1="5" x2="18" y2="5" stroke-width="8"/></svg>
+          </button>
+        </div>
+        <div class="action-group">
+          <button id="undo-btn" title="Undo (Ctrl+Z)" aria-label="Undo last annotation">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+          </button>
+          <button id="save-clipboard-btn" class="icon-btn">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+              <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+            </svg>
+            <span>Copy to clipboard</span>
+          </button>
+          <div class="split-btn-group" id="save-format-dropdown">
+            <button id="save-file-btn" class="split-main-btn" title="Save screenshot to file (Enter)">Save as PNG</button>
+            <button id="save-format-toggle" class="split-toggle-btn" aria-label="Select file format" aria-haspopup="listbox" aria-expanded="false">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            <div class="dropdown-menu" id="save-format-menu" role="listbox" aria-label="File formats">
+              <div class="dropdown-item" role="option" data-value="png" aria-selected="false">
+                <span>PNG</span>
+                <svg class="check-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <div class="dropdown-item" role="option" data-value="jpeg" aria-selected="false">
+                <span>JPEG</span>
+                <svg class="check-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <div class="dropdown-item" role="option" data-value="webp" aria-selected="false">
+                <span>WebP</span>
+                <svg class="check-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+            </div>
+          </div>
+          <button id="cancel-btn" class="icon-btn secondary-btn" title="Cancel & Close (Esc)">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+            <span>Cancel</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="canvas-wrap">
+      <canvas id="editor-canvas"></canvas>
+      <div id="help-text">
+        <span>Drag to draw</span>
+        <span class="dot">•</span>
+        <span><kbd>Esc</kbd> Cancel</span>
+        <span class="dot">•</span>
+        <span><kbd>Ctrl+Z</kbd> Undo</span>
+        <span class="dot">•</span>
+        <span><kbd>Enter</kbd> Save</span>
+      </div>
+    </div>
+    <script src="annotation.js"></script>
+  </body>
+</html>

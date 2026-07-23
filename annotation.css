@@ -1,0 +1,446 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, -apple-system, sans-serif;
+
+  /* Theme variables - Default Dark Mode */
+  --bg-main: #141416;
+  --text-main: #eee;
+  --toolbar-bg: rgba(30, 30, 34, 0.88);
+  --toolbar-border: rgba(255, 255, 255, 0.12);
+  --toolbar-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(0, 0, 0, 0.2);
+  --btn-hover-bg: rgba(255, 255, 255, 0.09);
+  --btn-text: #aaa;
+  --btn-text-hover: #fff;
+  --divider-color: rgba(255, 255, 255, 0.12);
+  --action-btn-bg: rgba(255, 255, 255, 0.08);
+  --action-btn-text: #ddd;
+  --action-btn-hover: rgba(255, 255, 255, 0.14);
+  --menu-bg: rgba(26, 26, 30, 0.96);
+  --menu-border: rgba(255, 255, 255, 0.14);
+  --menu-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+  --item-text: #ddd;
+  --item-hover-bg: rgba(255, 255, 255, 0.09);
+  --canvas-wrap-bg: #0d0d0f;
+  --help-bg: rgba(20, 20, 24, 0.85);
+  --help-border: rgba(255, 255, 255, 0.12);
+  --help-text: #aaa;
+  --kbd-bg: rgba(255, 255, 255, 0.12);
+  --kbd-border: rgba(255, 255, 255, 0.18);
+  --kbd-text: #eee;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg-main: #f2f2f7;
+    --text-main: #1d1d1f;
+    --toolbar-bg: rgba(255, 255, 255, 0.88);
+    --toolbar-border: rgba(0, 0, 0, 0.1);
+    --toolbar-shadow: 0 12px 32px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
+    --btn-hover-bg: rgba(0, 0, 0, 0.06);
+    --btn-text: #555;
+    --btn-text-hover: #111;
+    --divider-color: rgba(0, 0, 0, 0.1);
+    --action-btn-bg: rgba(0, 0, 0, 0.05);
+    --action-btn-text: #333;
+    --action-btn-hover: rgba(0, 0, 0, 0.1);
+    --menu-bg: rgba(255, 255, 255, 0.96);
+    --menu-border: rgba(0, 0, 0, 0.12);
+    --menu-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+    --item-text: #333;
+    --item-hover-bg: rgba(0, 0, 0, 0.06);
+    --canvas-wrap-bg: #e5e5ea;
+    --help-bg: rgba(255, 255, 255, 0.88);
+    --help-border: rgba(0, 0, 0, 0.1);
+    --help-text: #555;
+    --kbd-bg: rgba(0, 0, 0, 0.06);
+    --kbd-border: rgba(0, 0, 0, 0.12);
+    --kbd-text: #222;
+  }
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-main);
+  color: var(--text-main);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── 1. Floating Glassmorphic Toolbar ── */
+#toolbar-container {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  width: auto;
+  max-width: calc(100vw - 32px);
+}
+
+#toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  background: var(--toolbar-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--toolbar-border);
+  border-radius: 12px;
+  box-shadow: var(--toolbar-shadow);
+  flex-shrink: 0;
+  height: 48px;
+  white-space: nowrap;
+}
+
+.tool-group,
+.action-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.tool-group {
+  margin-right: 2px;
+}
+
+.action-group {
+  margin-left: 2px;
+}
+
+.tool-btn,
+#undo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1.5px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--btn-text);
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tool-btn:hover,
+#undo-btn:hover {
+  background: var(--btn-hover-bg);
+  color: var(--btn-text-hover);
+  transform: translateY(-1px);
+}
+
+.tool-btn:active,
+#undo-btn:active {
+  transform: translateY(0);
+}
+
+.tool-btn.active {
+  background: #1769e0;
+  color: #fff;
+  border-color: #3a8aff;
+  box-shadow: 0 2px 8px rgba(23, 105, 224, 0.35);
+}
+
+#undo-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+  transform: none;
+}
+
+/* ── 2. Colour Palette & Active Rings ── */
+#color-palette {
+  display: flex;
+  gap: 5px;
+  padding: 0 8px;
+  border-left: 1px solid var(--divider-color);
+  border-right: 1px solid var(--divider-color);
+  height: 30px;
+  align-items: center;
+}
+
+.color-swatch {
+  width: 20px;
+  height: 20px;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.15s ease;
+  flex-shrink: 0;
+}
+
+.color-swatch:hover {
+  transform: scale(1.22);
+}
+
+.color-swatch.active {
+  transform: scale(1.22);
+  box-shadow: 0 0 0 2px var(--bg-main), 0 0 0 4px #1769e0;
+}
+
+/* ── 3. Line Width Buttons ── */
+#line-width-group {
+  display: flex;
+  gap: 3px;
+  padding: 0 8px;
+  border-right: 1px solid var(--divider-color);
+  height: 30px;
+  align-items: center;
+}
+
+.lw-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1.5px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.lw-btn:hover {
+  background: var(--btn-hover-bg);
+}
+
+.lw-btn.active {
+  background: #1769e0;
+  border-color: #3a8aff;
+  box-shadow: 0 2px 6px rgba(23, 105, 224, 0.3);
+}
+
+.lw-btn svg line {
+  stroke: var(--btn-text);
+}
+
+.lw-btn.active svg line {
+  stroke: #fff;
+}
+
+.lw-btn:hover svg line {
+  stroke: var(--btn-text-hover);
+}
+
+/* ── 4. Action Buttons with Icons ── */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 7px;
+  font: 600 13px system-ui, -apple-system, sans-serif;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  background: var(--action-btn-bg);
+  color: var(--action-btn-text);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.icon-btn:hover {
+  background: var(--action-btn-hover);
+  color: var(--btn-text-hover);
+}
+
+.icon-btn:active {
+  transform: scale(0.98);
+}
+
+/* Split Button Format Selector */
+.split-btn-group {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 7px;
+  background: #1769e0;
+  box-shadow: 0 2px 8px rgba(23, 105, 224, 0.35);
+  transition: box-shadow 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.split-btn-group:hover {
+  box-shadow: 0 4px 12px rgba(23, 105, 224, 0.45);
+}
+
+.split-main-btn {
+  background: transparent;
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  font: 600 13px system-ui, -apple-system, sans-serif;
+  cursor: pointer;
+  border-radius: 7px 0 0 7px;
+  transition: background 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.split-main-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.split-main-btn:active {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.split-toggle-btn {
+  background: transparent;
+  color: #fff;
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.22);
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 0 7px 7px 0;
+  transition: background 0.15s ease;
+}
+
+.split-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.split-toggle-btn:active {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.split-toggle-btn svg {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.split-btn-group.open .split-toggle-btn svg {
+  transform: rotate(180deg);
+}
+
+/* Glassmorphic Dropdown Menu */
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 140px;
+  padding: 5px;
+  background: var(--menu-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--menu-border);
+  border-radius: 9px;
+  box-shadow: var(--menu-shadow);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px) scale(0.97);
+  transform-origin: top right;
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+  z-index: 1000;
+}
+
+.split-btn-group.open .dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 11px;
+  font: 500 13px system-ui, -apple-system, sans-serif;
+  color: var(--item-text);
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.dropdown-item:hover {
+  background: var(--item-hover-bg);
+  color: var(--btn-text-hover);
+}
+
+.dropdown-item.active {
+  color: #1769e0;
+  background: rgba(23, 105, 224, 0.15);
+  font-weight: 600;
+}
+
+.dropdown-item .check-icon {
+  opacity: 0;
+  stroke: #1769e0;
+  transition: opacity 0.12s ease;
+}
+
+.dropdown-item.active .check-icon {
+  opacity: 1;
+}
+
+/* ── 5. Canvas Area & Floating Keycap Help Pill ── */
+#canvas-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: auto;
+  background: var(--canvas-wrap-bg);
+  padding-top: 60px;
+}
+
+#editor-canvas {
+  display: block;
+  cursor: crosshair;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+#help-text {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: var(--help-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--help-text);
+  border: 1px solid var(--help-border);
+  font-size: 12px;
+  font-weight: 500;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  z-index: 100;
+}
+
+#help-text .dot {
+  opacity: 0.35;
+  font-size: 10px;
+}
+
+kbd {
+  display: inline-block;
+  padding: 1.5px 5px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--kbd-text);
+  background: var(--kbd-bg);
+  border: 1px solid var(--kbd-border);
+  border-radius: 4px;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+  margin-right: 2px;
+}
