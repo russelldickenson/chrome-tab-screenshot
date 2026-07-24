@@ -17,6 +17,10 @@ Features include:
   </tr>
 </table>
 
+> [!IMPORTANT]
+> This app was entirely vibe-coded, AKA "AI slop". There are almost certainly similar apps
+> of better quality than this one. I created this mainly to experiment with agentic AI.
+
 ## Install
 
 This extension is not yet published to the Chrome web store, so you must install it locally.
@@ -63,3 +67,11 @@ Use this workflow when you want to draw arrows or boxes on the screenshot before
    - To copy the image directly to your system clipboard, select **Copy to clipboard** .
    - To download it to your computer, select **Save as [PNG / JPEG / WebP]**.
      _(Select the arrow next to the save button to choose the file format)_.
+
+## License
+
+GPL v3
+
+## Author
+
+Russell Dickenson
