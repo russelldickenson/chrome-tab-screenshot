@@ -9,11 +9,13 @@ Features include:
 
 ![Tab Screenshot modal showing area selection, annotation toggle, and file saving options](tab-screenshot-1.png)
 
-![Tab Screenshot's rectangular selection tool, with options capture selection or cancel](tab-screenshot-2.png)
-
-![Tab Screenshot's annotation features, including arrows, rectangle, and a selection of colours](tab-screenshot-4.png)
-
-![Example screenshot annotated with arrows and text underlined](tab-screenshot-3.webp)
+<table>
+  <tr>
+    <td><img src="screenshots/tab-screenshot-1.png" width="250"/></td>
+    <td><img src="screenshots/tab-screenshot-4.png" width="250"/></td>
+    <td><img src="screenshots/tab-screenshot-3.webp" width="250"/></td>
+  </tr>
+</table>
 
 ## Install
 
