@@ -7,7 +7,7 @@ Features include:
 - Download the screenshot as a file (PNG, JPEG, or WebP) or copy it to the clipboard.
 - Annotate the screenshot with arrows and boxes before saving it.
 
-![Tab Screenshot modal showing area selection, annotation toggle, and file saving options](screenshots/tab-screenshot-1.png)
+<img src="screenshots/tab-screenshot-1.png" width="300" alt="Tab Screenshot modal showing area selection, annotation toggle, and file saving options">
 
 <table>
   <tr>
