@@ -7,13 +7,13 @@ Features include:
 - Download the screenshot as a file (PNG, JPEG, or WebP) or copy it to the clipboard.
 - Annotate the screenshot with arrows and boxes before saving it.
 
-[Tab Screenshot modal showing area selection, annotation toggle, and file saving options](tab-screenshot-1.png)
+![Tab Screenshot modal showing area selection, annotation toggle, and file saving options](tab-screenshot-1.png)
 
-[Tab Screenshot's rectangular selection tool, with options capture selection or cancel](tab-screensht-2.png)
+![Tab Screenshot's rectangular selection tool, with options capture selection or cancel](tab-screenshot-2.png)
 
-[Tab Screenshot's annotation features, including arrows, rectangle, and a selection of colours](tab-screenshot-4.png)
+![Tab Screenshot's annotation features, including arrows, rectangle, and a selection of colours](tab-screenshot-4.png)
 
-[Example screenshot annotated with arrows and text underlined](tab-screenshot-3.webp)
+![Example screenshot annotated with arrows and text underlined](tab-screenshot-3.webp)
 
 ## Install
 
