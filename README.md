@@ -2,7 +2,7 @@
 
 Capture, annotate, and save screenshots of your browser tabs — fast, private, and entirely local.
 
-<img src="screenshots/tab-screenshot-1.png" width="640" alt="Tab Screenshot popup — capture options, format selector, and annotation toggle">
+<img src="screenshots/tab-screenshot-1.png" width="320" alt="Tab Screenshot popup — capture options, format selector, and annotation toggle">
 
 [![Chrome Extension](https://img.shields.io/badge/Chrome%20Extension-Manifest%20V3-4285f4?style=for-the-badge&logo=googlechrome)](https://developer.chrome.com/docs/extensions)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=for-the-badge)](https://github.com/russelldickenson/chrome-tab-screenshot/blob/main/LICENSE)
