@@ -45,7 +45,7 @@ Every step runs locally in your browser. No data leaves your machine.
       <small><b>Annotation editor</b></small>
     </td>
     <td align="center">
-      <img src="screenshots/tab-screenshot-4.png" width="250" alt="Color palette and stroke width picker"><br>
+      <img src="screenshots/tab-screenshot-4.png" width="250" alt="Example screenshot with annotations"><br>
       <small><b>Color &amp; stroke picker</b></small>
     </td>
   </tr>
@@ -76,9 +76,9 @@ To capture a screenshot:
    - **Capture visible area** — captures the full viewport instantly
    - **Capture selected area** — drag the crosshair to select a region, then click **Capture selection**
 4. If annotation is enabled, the **Annotation Editor** opens:
-   - Select the **Arrow** or **Box** tool
-   - Pick a color and stroke width (2px–8px)
-   - Press <kbd>Ctrl+Z</kbd> / <kbd>⌘Z</kbd> to undo
+   - Select the **Arrow** or **Box** tool.
+   - Pick a color and stroke width (2px–8px).
+   - Press <kbd>Ctrl+Z</kbd> / <kbd>⌘Z</kbd> to undo.
 5. Export your screenshot:
    - **Copy to clipboard** — copies the image to your system clipboard
    - **Save as [PNG / JPEG / WebP]** — downloads the image to your computer
