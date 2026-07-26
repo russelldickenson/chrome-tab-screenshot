@@ -46,7 +46,7 @@ Every step runs locally in your browser. No data leaves your machine.
     </td>
     <td align="center">
       <img src="screenshots/tab-screenshot-4.png" width="250" alt="Example screenshot with annotations"><br>
-      <small><b>Color &amp; stroke picker</b></small>
+      <small><b>Example screenshot with annotations</b></small>
     </td>
   </tr>
 </table>
