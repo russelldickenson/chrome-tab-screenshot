@@ -1,8 +1,8 @@
 const withActiveTab = async (message) => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.id) return;
+  if (!tab?.id) return { ok: false, error: 'No active tab found.' };
   await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['selector.js'] });
-  await chrome.tabs.sendMessage(tab.id, message);
+  return chrome.tabs.sendMessage(tab.id, message);
 };
 
 const destSelect = document.querySelector('#destination');
@@ -44,13 +44,17 @@ annotateCheck.addEventListener('change', async () => {
 
 document.querySelector('#visible').addEventListener('click', async () => {
   try {
-    await withActiveTab({
+    const response = await withActiveTab({
       type: 'capture-visible',
       format: formatSelect.value,
       destination: destSelect.value,
       annotate: annotateCheck.checked,
     });
-    window.close();
+    if (response?.ok) {
+      window.close();
+    } else {
+      showError(response?.error || 'This page cannot be captured. Try a normal website tab.');
+    }
   } catch (error) {
     showError('This page cannot be captured. Try a normal website tab.');
   }
@@ -58,13 +62,17 @@ document.querySelector('#visible').addEventListener('click', async () => {
 
 document.querySelector('#portion').addEventListener('click', async () => {
   try {
-    await withActiveTab({
+    const response = await withActiveTab({
       type: 'begin-selection',
       format: formatSelect.value,
       destination: destSelect.value,
       annotate: annotateCheck.checked,
     });
-    window.close();
+    if (response?.ok) {
+      window.close();
+    } else {
+      showError(response?.error || 'This page cannot be captured. Try a normal website tab.');
+    }
   } catch (error) {
     showError('This page cannot be captured. Try a normal website tab.');
   }

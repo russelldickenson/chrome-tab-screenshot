@@ -3,7 +3,7 @@
   "name": "Tab Screenshot",
   "version": "1.2.0",
   "description": "Capture the visible tab or a chosen area of it.",
-  "permissions": ["activeTab", "tabs", "downloads", "storage", "scripting", "clipboardWrite"],
+  "permissions": ["activeTab", "downloads", "storage", "unlimitedStorage", "scripting", "clipboardWrite"],
   "action": {
     "default_title": "Take a screenshot",
     "default_popup": "popup.html",

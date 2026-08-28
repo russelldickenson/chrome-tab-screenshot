@@ -1,8 +1,9 @@
 const supportedFormats = new Set(['png', 'jpeg', 'webp']);
 const formatFor = (format) => supportedFormats.has(format) ? format : 'png';
-const filenameFor = (format) => {
+const filenameFor = (format, prefix) => {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  return `Tab Screenshot ${timestamp}.${formatFor(format)}`;
+  const label = prefix === 'tab-selection' ? 'Tab Selection' : 'Tab Screenshot';
+  return `${label} ${timestamp}.${formatFor(format)}`;
 };
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -18,31 +19,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (message.type === 'download-image') {
         await chrome.downloads.download({
           url: message.dataUrl,
-          filename: filenameFor(message.format),
+          filename: filenameFor(message.format, message.prefix),
           saveAs: true,
         });
         sendResponse({ ok: true });
         return;
       }
 
-      if (message.type === 'capture-visible' && sender.tab?.id) {
-        const format = formatFor(message.format);
-        // captureVisibleTab only guarantees PNG/JPEG; use PNG then encode WebP in the tab.
+      if (message.type === 'request-capture' && sender.tab?.id) {
+        // captureVisibleTab only guarantees PNG/JPEG; callers that need WebP
+        // re-encode from this PNG in a document context (canvas).
         const dataUrl = await chrome.tabs.captureVisibleTab(sender.tab.windowId, { format: 'png' });
-        await chrome.tabs.sendMessage(sender.tab.id, {
-          type: 'full-screenshot', dataUrl, format,
-        });
-        sendResponse({ ok: true });
+        sendResponse({ ok: true, dataUrl });
         return;
-      }
-
-      if (message.type === 'capture-selection' && sender.tab?.id) {
-        const format = formatFor(message.format);
-        const dataUrl = await chrome.tabs.captureVisibleTab(sender.tab.windowId, { format: 'png' });
-        await chrome.tabs.sendMessage(sender.tab.id, {
-          type: 'crop-screenshot', dataUrl, crop: message.crop, format,
-        });
-        sendResponse({ ok: true });
       }
     } catch (error) {
       sendResponse({ ok: false, error: error.message });

@@ -321,7 +321,16 @@
       swatch.dataset.color = c;
       swatch.style.backgroundColor = c;
       if (c === '#FFFFFF') swatch.style.borderColor = '#888';
+      swatch.setAttribute('role', 'button');
+      swatch.setAttribute('tabindex', '0');
+      swatch.setAttribute('aria-label', `Colour ${c}`);
       swatch.addEventListener('click', () => setColor(c));
+      swatch.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          setColor(c);
+        }
+      });
       container.appendChild(swatch);
     }
   }
