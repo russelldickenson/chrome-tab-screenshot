@@ -1,12 +1,48 @@
 // Annotation editor logic
 document.addEventListener('DOMContentLoaded', () => {
+  // System capability detection
+  const systemCapabilities = {
+    hasOffscreenCanvas: typeof OffscreenCanvas !== 'undefined',
+    isLowEndDevice: detectLowEndDevice(),
+    maxMemory: getSystemMemoryEstimate()
+  };
+  
+  // Detect low-end devices for performance optimization
+  function detectLowEndDevice() {
+    // Check for low-end device indicators
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isLowEnd = isMobile && (navigator.hardwareConcurrency < 4 || navigator.deviceMemory < 2);
+    
+    // Additional checks for older devices
+    const hasSlowCPU = !('requestAnimationFrame' in window);
+    const hasLimitedMemory = typeof navigator.deviceMemory === 'undefined' && 
+      (typeof navigator.hardwareConcurrency === 'undefined' || navigator.hardwareConcurrency < 2);
+    
+    return isLowEnd || hasSlowCPU || hasLimitedMemory;
+  }
+  
+  // Estimate system memory for optimization
+  function getSystemMemoryEstimate() {
+    // Return a reasonable estimate for memory usage
+    return typeof navigator.deviceMemory !== 'undefined' ? 
+      navigator.deviceMemory * 1024 : 2048; // MB
+  }
+  
   // Load image and set up canvas with performance optimizations
   const canvas = document.getElementById('annotation-canvas');
   const ctx = canvas.getContext('2d');
   
+  // Performance monitoring variables
+  let imageLoadStartTime = 0;
+  let annotationOperations = {
+    saveCount: 0,
+    saveTimes: [],
+    lastSave: null
+  };
+  
   // Performance optimization: Use OffscreenCanvas when available
   let offscreenCanvas = null;
-  if (typeof OffscreenCanvas !== 'undefined') {
+  if (systemCapabilities.hasOffscreenCanvas) {
     offscreenCanvas = new OffscreenCanvas(1, 1);
   }
   
@@ -18,13 +54,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isImageLoading) return; // Prevent race conditions
     
     try {
+      // Track loading time
+      const loadTime = Date.now() - imageLoadStartTime;
+      console.log('Image loaded in:', loadTime, 'ms');
+      
       // Set canvas size to match image with bounds checking
-      const maxWidth = 2000; // Prevent excessively large canvases
-      const maxHeight = 2000;
+      const maxWidth = systemCapabilities.isLowEndDevice ? 1000 : 2000; // Lower limit for low-end devices
+      const maxHeight = systemCapabilities.isLowEndDevice ? 1000 : 2000;
       
       let displayWidth = img.width;
       let displayHeight = img.height;
       
+      // Scale down large images for better performance on low-end devices
       if (img.width > maxWidth || img.height > maxHeight) {
         const ratio = Math.min(maxWidth / img.width, maxHeight / img.height);
         displayWidth = Math.floor(img.width * ratio);
@@ -67,6 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (request.type === 'annotation-image') {
       try {
         isImageLoading = true;
+        imageLoadStartTime = Date.now();
         img.src = request.dataUrl;
         sendResponse({ type: 'annotation-loaded' });
       } catch (error) {
@@ -111,12 +153,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const originalText = saveBtn.textContent;
     saveBtn.textContent = 'Saving...';
     saveBtn.disabled = true;
+    saveBtn.classList.add('loading');
     
     // Throttle rapid saves
     setTimeout(() => {
       try {
+        // Track save operation
+        const startTime = Date.now();
+        annotationOperations.saveCount++;
+        
         // Get image data with error handling
         const dataUrl = canvas.toDataURL('image/png');
+        
+        // Track save time
+        const saveTime = Date.now() - startTime;
+        annotationOperations.saveTimes.push(saveTime);
+        annotationOperations.lastSave = Date.now();
+        
+        console.log('Save operation took:', saveTime, 'ms');
         
         // Send to background for download or clipboard with error handling
         chrome.runtime.sendMessage({ type: 'save-annotation', dataUrl });
@@ -127,6 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Restore button state
         saveBtn.textContent = originalText;
         saveBtn.disabled = false;
+        saveBtn.classList.remove('loading');
       }
     }, 100);
   });
@@ -155,6 +210,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (ctx) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
+    
+    // Log performance stats for debugging
+    console.log('Annotation editor performance stats:', {
+      saveCount: annotationOperations.saveCount,
+      saveTimes: annotationOperations.saveTimes.slice(-5), // Last 5 saves
+      lastSave: annotationOperations.lastSave,
+      system: systemCapabilities
+    });
   });
   
   // Add keyboard shortcuts for performance
@@ -169,5 +232,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Escape') {
       document.getElementById('cancel-btn').click();
     }
+  });
+  
+  // Add performance monitoring for long operations
+  const longOperationTimeout = setTimeout(() => {
+    console.warn('Annotation editor taking longer than expected');
+  }, 5000); // 5 second warning for slow operations
+  
+  window.addEventListener('beforeunload', () => {
+    clearTimeout(longOperationTimeout);
   });
 });

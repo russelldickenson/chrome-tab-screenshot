@@ -4,6 +4,74 @@ let selectionStart = { x: 0, y: 0 };
 let selectionRect = null;
 let captureButton = null;
 let overlay = null;
+let systemCapabilities = {
+  hasOffscreenCanvas: typeof OffscreenCanvas !== 'undefined',
+  isLowEndDevice: detectLowEndDevice()
+};
+
+// System capability detection
+function detectLowEndDevice() {
+  // Check for low-end device indicators
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const isLowEnd = isMobile && (navigator.hardwareConcurrency < 4 || navigator.deviceMemory < 2);
+  
+  // Additional checks for older devices
+  const hasSlowCPU = !('requestAnimationFrame' in window);
+  const hasLimitedMemory = typeof navigator.deviceMemory === 'undefined' && 
+    (typeof navigator.hardwareConcurrency === 'undefined' || navigator.hardwareConcurrency < 2);
+  
+  return isLowEnd || hasSlowCPU || hasLimitedMemory;
+}
+
+// Performance monitoring for selection operations
+let selectionPerformance = {
+  startTime: null,
+  eventCount: 0,
+  maxEvents: 1000 // Prevent excessive logging
+};
+
+// Throttle function to limit event processing
+function throttle(func, limit) {
+  let inThrottle;
+  return function() {
+    const args = arguments;
+    const context = this;
+    if (!inThrottle) {
+      func.apply(context, args);
+      inThrottle = true;
+      setTimeout(() => inThrottle = false, limit);
+    }
+  }
+}
+
+// Optimized mouse move handler with throttling
+const throttledMouseMove = throttle((e) => {
+  if (!isSelecting) return;
+  
+  const rect = overlay.getBoundingClientRect();
+  const currentX = e.clientX - rect.left;
+  const currentY = e.clientY - rect.top;
+  
+  const width = Math.abs(currentX - selectionStart.x);
+  const height = Math.abs(currentY - selectionStart.y);
+  
+  selectionRect.style.width = width + 'px';
+  selectionRect.style.height = height + 'px';
+  
+  // Adjust position if dragging left/up
+  if (currentX < selectionStart.x) {
+    selectionRect.style.left = currentX + 'px';
+  }
+  if (currentY < selectionStart.y) {
+    selectionRect.style.top = currentY + 'px';
+  }
+  
+  // Track performance
+  selectionPerformance.eventCount++;
+  if (selectionPerformance.eventCount > selectionPerformance.maxEvents) {
+    console.warn('High selection event rate detected');
+  }
+}, 16); // ~60fps throttling
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'begin-selection') {
@@ -63,6 +131,7 @@ function show(format) {
     pointer-events: auto;
     opacity: 0.9;
     transition: opacity 0.2s;
+    font-weight: bold;
   `;
   
   // Add hover effect
@@ -82,6 +151,10 @@ function show(format) {
     e.preventDefault();
     e.stopPropagation();
     
+    // Track performance start
+    selectionPerformance.startTime = Date.now();
+    selectionPerformance.eventCount = 0;
+    
     isSelecting = true;
     const rect = overlay.getBoundingClientRect();
     selectionStart = {
@@ -97,34 +170,20 @@ function show(format) {
   };
   
   const handleMouseMove = (e) => {
-    if (!isSelecting) return;
-    
-    // Throttle mouse move events for performance
-    requestAnimationFrame(() => {
-      const rect = overlay.getBoundingClientRect();
-      const currentX = e.clientX - rect.left;
-      const currentY = e.clientY - rect.top;
-      
-      const width = Math.abs(currentX - selectionStart.x);
-      const height = Math.abs(currentY - selectionStart.y);
-      
-      selectionRect.style.width = width + 'px';
-      selectionRect.style.height = height + 'px';
-      
-      // Adjust position if dragging left/up
-      if (currentX < selectionStart.x) {
-        selectionRect.style.left = currentX + 'px';
-      }
-      if (currentY < selectionStart.y) {
-        selectionRect.style.top = currentY + 'px';
-      }
-    });
+    // Use throttled mouse move for better performance
+    throttledMouseMove(e);
   };
   
   const handleMouseUp = (e) => {
     if (!isSelecting) return;
     
     isSelecting = false;
+    
+    // Log selection performance
+    if (selectionPerformance.startTime) {
+      const duration = Date.now() - selectionPerformance.startTime;
+      console.log('Selection operation took:', duration, 'ms');
+    }
     
     // Show capture button when selection is made
     captureButton.style.display = 'block';
@@ -174,5 +233,18 @@ function show(format) {
       overlay.remove();
     }
     document.body.style.overflow = '';
+  });
+  
+  // Add timeout for very long selections (to prevent hanging)
+  const selectionTimeout = setTimeout(() => {
+    console.warn('Selection operation timed out');
+    if (overlay && overlay.parentNode) {
+      overlay.remove();
+    }
+  }, 30000); // 30 second timeout
+  
+  // Cleanup timeout when window is closed
+  window.addEventListener('beforeunload', () => {
+    clearTimeout(selectionTimeout);
   });
 }
