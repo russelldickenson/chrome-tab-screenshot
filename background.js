@@ -1,41 +1,78 @@
-const supportedFormats = new Set(['png', 'jpeg', 'webp']);
-const formatFor = (format) => supportedFormats.has(format) ? format : 'png';
-const filenameFor = (format, prefix) => {
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const label = prefix === 'tab-selection' ? 'Tab Selection' : 'Tab Screenshot';
-  return `${label} ${timestamp}.${formatFor(format)}`;
-};
+// Background script - service worker for handling extension messages
+let captureInProgress = false;
+let storageCache = new Map();
+let cacheTimeout = 5 * 60 * 1000; // 5 minutes cache timeout
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  (async () => {
-    try {
-      if (message.type === 'open-annotator') {
-        await chrome.storage.local.set({ pendingScreenshot: { dataUrl: message.dataUrl, format: message.format, destination: message.destination || 'file' } });
-        await chrome.tabs.create({ url: chrome.runtime.getURL('annotation.html') });
-        sendResponse({ ok: true });
-        return;
-      }
-
-      if (message.type === 'download-image') {
-        await chrome.downloads.download({
-          url: message.dataUrl,
-          filename: filenameFor(message.format, message.prefix),
-          saveAs: true,
-        });
-        sendResponse({ ok: true });
-        return;
-      }
-
-      if (message.type === 'request-capture' && sender.tab?.id) {
-        // captureVisibleTab only guarantees PNG/JPEG; callers that need WebP
-        // re-encode from this PNG in a document context (canvas).
-        const dataUrl = await chrome.tabs.captureVisibleTab(sender.tab.windowId, { format: 'png' });
-        sendResponse({ ok: true, dataUrl });
-        return;
-      }
-    } catch (error) {
-      sendResponse({ ok: false, error: error.message });
+// Cache cleanup function
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of storageCache.entries()) {
+    if (now - value.timestamp > cacheTimeout) {
+      storageCache.delete(key);
     }
-  })();
-  return true;
+  }
+}, 60000); // Check every minute
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.type === 'capture-visible') {
+    // Prevent multiple simultaneous captures
+    if (captureInProgress) {
+      sendResponse({ type: 'error', message: 'Capture already in progress' });
+      return true;
+    }
+    
+    captureInProgress = true;
+    
+    chrome.tabs.captureVisibleTab(null, { format: request.format }, (dataUrl) => {
+      captureInProgress = false;
+      sendResponse({ type: 'full-screenshot', dataUrl, format: request.format });
+    });
+    return true;
+  }
+  
+  if (request.type === 'capture-selection') {
+    // Prevent multiple simultaneous captures
+    if (captureInProgress) {
+      sendResponse({ type: 'error', message: 'Capture already in progress' });
+      return true;
+    }
+    
+    captureInProgress = true;
+    
+    chrome.tabs.captureVisibleTab(null, { format: request.format }, (dataUrl) => {
+      captureInProgress = false;
+      sendResponse({ type: 'cropped-screenshot', dataUrl, format: request.format });
+    });
+    return true;
+  }
+  
+  // Handle storage operations with caching
+  if (request.type === 'storage-get') {
+    const cached = storageCache.get(request.key);
+    if (cached && Date.now() - cached.timestamp < cacheTimeout) {
+      sendResponse({ type: 'storage-get-response', value: cached.value });
+      return true;
+    }
+    
+    chrome.storage.sync.get(request.key, (result) => {
+      storageCache.set(request.key, {
+        value: result[request.key],
+        timestamp: Date.now()
+      });
+      sendResponse({ type: 'storage-get-response', value: result[request.key] });
+    });
+    return true;
+  }
+  
+  if (request.type === 'storage-set') {
+    chrome.storage.sync.set({ [request.key]: request.value }, () => {
+      // Cache the set value
+      storageCache.set(request.key, {
+        value: request.value,
+        timestamp: Date.now()
+      });
+      sendResponse({ type: 'storage-set-response' });
+    });
+    return true;
+  }
 });

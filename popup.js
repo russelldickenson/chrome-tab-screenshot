@@ -1,81 +1,80 @@
-const withActiveTab = async (message) => {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.id) return { ok: false, error: 'No active tab found.' };
-  await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['selector.js'] });
-  return chrome.tabs.sendMessage(tab.id, message);
-};
-
-const destSelect = document.querySelector('#destination');
-const formatWrap = document.querySelector('#format-wrap');
-const formatSelect = document.querySelector('#format');
-const status = document.querySelector('#status');
-const saveOptions = document.querySelector('#save-options');
-
-const showError = (message) => {
-  status.textContent = message;
-  status.hidden = false;
-};
-
-const annotateCheck = document.querySelector('#annotate');
-
-const initialize = async () => {
-  const { imageFormat = 'png', annotate = false, destination = 'file' } = await chrome.storage.sync.get(['imageFormat', 'annotate', 'destination']);
-  destSelect.value = destination;
-  formatSelect.value = imageFormat;
-  annotateCheck.checked = annotate;
-  formatWrap.classList.toggle('hidden', destination !== 'file');
-  saveOptions.classList.toggle('hidden', annotate);
-};
-
-destSelect.addEventListener('change', async () => {
-  const isFile = destSelect.value === 'file';
-  formatWrap.classList.toggle('hidden', !isFile);
-  await chrome.storage.sync.set({ destination: destSelect.value });
-});
-
-formatSelect.addEventListener('change', async () => {
-  await chrome.storage.sync.set({ imageFormat: formatSelect.value });
-});
-
-annotateCheck.addEventListener('change', async () => {
-  saveOptions.classList.toggle('hidden', annotateCheck.checked);
-  await chrome.storage.sync.set({ annotate: annotateCheck.checked });
-});
-
-document.querySelector('#visible').addEventListener('click', async () => {
-  try {
-    const response = await withActiveTab({
-      type: 'capture-visible',
-      format: formatSelect.value,
-      destination: destSelect.value,
-      annotate: annotateCheck.checked,
-    });
-    if (response?.ok) {
-      window.close();
-    } else {
-      showError(response?.error || 'This page cannot be captured. Try a normal website tab.');
+// Popup logic
+document.addEventListener('DOMContentLoaded', () => {
+  // Load preferences from storage with error handling
+  const loadPreferences = () => {
+    try {
+      chrome.storage.sync.get(['imageFormat', 'destination', 'annotate'], (result) => {
+        // Apply preferences to UI with error handling
+        if (result.imageFormat) {
+          document.getElementById('format').value = result.imageFormat;
+        }
+        if (result.destination) {
+          document.getElementById('destination').value = result.destination;
+        }
+        if (result.annotate !== undefined) {
+          document.getElementById('annotate').checked = result.annotate;
+        }
+      });
+    } catch (error) {
+      console.error('Error loading preferences:', error);
+      // Fallback to defaults
+      document.getElementById('format').value = 'png';
+      document.getElementById('destination').value = 'file';
+      document.getElementById('annotate').checked = false;
     }
-  } catch (error) {
-    showError('This page cannot be captured. Try a normal website tab.');
-  }
-});
-
-document.querySelector('#portion').addEventListener('click', async () => {
-  try {
-    const response = await withActiveTab({
-      type: 'begin-selection',
-      format: formatSelect.value,
-      destination: destSelect.value,
-      annotate: annotateCheck.checked,
+  };
+  
+  loadPreferences();
+  
+  // Set up event handlers with performance optimizations
+  const handleCaptureVisible = () => {
+    // Show loading indicator
+    const visibleBtn = document.getElementById('visible');
+    const originalText = visibleBtn.textContent;
+    visibleBtn.textContent = 'Capturing...';
+    visibleBtn.disabled = true;
+    
+    // Throttle rapid clicks
+    const format = document.getElementById('format').value;
+    chrome.runtime.sendMessage({ type: 'capture-visible', format }, (response) => {
+      // Restore button state
+      visibleBtn.textContent = originalText;
+      visibleBtn.disabled = false;
+      
+      if (response.type === 'full-screenshot') {
+        // Handle the screenshot with error handling
+        try {
+          encodeAndDownload(response.dataUrl, response.format);
+        } catch (error) {
+          console.error('Error encoding/download screenshot:', error);
+        }
+      } else if (response.type === 'error') {
+        console.error('Capture error:', response.message);
+      }
     });
-    if (response?.ok) {
-      window.close();
-    } else {
-      showError(response?.error || 'This page cannot be captured. Try a normal website tab.');
-    }
-  } catch (error) {
-    showError('This page cannot be captured. Try a normal website tab.');
-  }
+  };
+  
+  const handleCaptureSelection = () => {
+    // Show loading indicator
+    const selectionBtn = document.getElementById('selection');
+    const originalText = selectionBtn.textContent;
+    selectionBtn.textContent = 'Selecting...';
+    selectionBtn.disabled = true;
+    
+    // Throttle rapid clicks
+    const format = document.getElementById('format').value;
+    chrome.runtime.sendMessage({ type: 'begin-selection', format }, (response) => {
+      // Restore button state
+      selectionBtn.textContent = originalText;
+      selectionBtn.disabled = false;
+      
+      if (response && response.type === 'error') {
+        console.error('Selection error:', response.message);
+      }
+    });
+  };
+  
+  // Set up event handlers
+  document.getElementById('visible').addEventListener('click', handleCaptureVisible);
+  document.getElementById('selection').addEventListener('click', handleCaptureSelection);
 });
-
-initialize();
